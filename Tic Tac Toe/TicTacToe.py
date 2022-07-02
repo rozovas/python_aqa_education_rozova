@@ -1,3 +1,6 @@
+import sys
+
+
 class Game:
 
     def __init__(self, field=None):
@@ -46,26 +49,25 @@ class Game:
         elif l.count(2) == 1:
             # 0 wins
             return 2
-        else:
-            if s.count("_") == 0:
-                # Draw
-                return 0
+        elif "_" in [*self.field]:
+            # Draw
+            return 0
 
-    def make_move(self, x, y):
-        if self.field[x - 1][y - 1] != '_':
+    def accept_coordinates(self, x, y, char):
+        x = int(x)
+        y = int(y)
+        if not (0 < x < 4 and 0 < y < 4):
+            raise CellNumberError
+            # TODO: rise exception
+        elif self.field[x - 1][y - 1] != '_':
             return "The cell is occupied! Choose another one!"
         else:
-            if self.x_player:
-                self.field[x - 1][y - 1] = 'X'
-                self.x_player = False
-                return self.get_winner()
-            elif not self.x_player:
-                self.field[x - 1][y - 1] = '0'
-                self.x_player = True
-                return self.get_winner()
-            self.display_field()
-            if self.get_winner() is not None:
-                break  # is_playing = False
+            if char == 'X':
+                if self.get_winner() is None:
+                    self.field[x - 1][y - 1] = 'X'
+            else:
+                if self.get_winner() is None:
+                    self.field[x - 1][y - 1] = '0'
 
 
 class Player:
@@ -73,43 +75,119 @@ class Player:
     # def __new__(cls, **kwargs):
     #     ...
 
-    def __init__(self, name, age):
+    def __init__(self, name):
         self.name = name
-        self.age = age
+        self.win_log = 0
+        # self.age = age
 
     def __str__(self):
-        return f"Player: {self.name}\nAge: {self.age}"
+        return self.name
+
+    def win_log_update(self):
+        self.win_log += 1
+        return self.win_log
 
 
-def play_game():
+class CellNumberError(Exception):
+
+    def __init__(self):
+        self.message = "Coordinates should be from 1 to 3"
+
+    def __str__(self):
+        return self.message
+
+
+class CellOccupiedError(Exception):
+
+    def __init__(self):
+        self.message = "This cell is occupied."
+
+    def __str__(self):
+        return self.message
+
+#
+# def another_game():
+#     ...
+
+
+def start_game(player_x, player_0):
+    current_player = player_x
     game = Game()
     game.display_field()
-    x_player = True
+    game_finished = 0
     while True:
-        x, y = input("Insert coordinates: ").split()
-        # x, y = i[int(el) for el in input("Insert coordinates: ").split()]
-        x = int(x)
-        y = int(y)
-        if s[x - 1][y - 1] != '_':
-            print("The cell is occupied! Choose another one!")
-        # elif get_winner(h, v, d) == 3:
-        #     print("Impossible. Select the other coordinates ")
-        else:
-            if x_player:
-                s[x - 1][y - 1] = 'X'
-                x_player = False
-                print(get_winner(s))
-            elif not x_player:
-                s[x - 1][y - 1] = '0'
-                print(get_winner(s))
-                x_player = True
-            display(s)
-            if get_winner(s) is not None:
-                break  # is_playing = False
+        try:
+            x, y = input(f"{current_player.name}, insert coordinates: ").split()
+            # x, y = i[int(el) for el in input("Insert coordinates: ").split()]
+            game.accept_coordinates(x, y, 'X' if current_player == player_x else '0')
+            current_player = player_x if current_player == player_0 else player_0
+            game.display_field()
+            winner = game.get_winner()
+            if winner is not None:
+                if winner == 1:
+                    print(f"{player_x.name} wins. Congrats!")
+                    return
+                elif winner == 2:
+                    print(f"{player_0.name} wins. Well done!")
+                    return
+                elif winner == 0:
+                    print("Draw")
+                    return
+                elif winner == 3:
+                    print("Impossible")
+
+        except ValueError:
+            print("You should enter two numbers separated by space!")
+
+        except CellNumberError as c:
+            print(c)
+
+        except CellOccupiedError as o:
+            print(o)
 
 
-play_game()
+def main():
 
-# s = ['XOX', 'OOX', 'XXO']
-# h, v, d = divide(s)
-# print(impossible(h, v, d))
+    def play_game():
+        player_x = Player(input("Player X, insert your name: "))
+        player_0 = Player(input("Player 0, insert your name: "))
+        new_game = True
+        while new_game:
+            start_game(player_x, player_0)
+            another_game = int(input("Insert 1 to play another game, insert any other to get back to main menu"))
+            new_game = another_game == 1
+
+    def view_log():
+        pass
+
+    def clear_log():
+        pass
+
+    def exit_game():
+        sys.exit()
+
+    menu = {
+        1: (play_game, "Play a new game"),
+        2: (view_log, "View log"),
+        3: (clear_log, "Clear log"),
+        4: (exit_game, "Exit")
+    }
+
+    while True:
+        try:
+            print("Press key to:")
+            for k in menu:
+                print(f"{k}. {menu[k][1]}")
+            choice = int(input())
+            menu[choice][0]()
+        except (KeyError, ValueError):
+            print("Wrong input.")
+
+    # if menu == 1:
+    #     player_x = Player(input("Player X, insert your name: "))
+    #     player_0 = Player(input("Player 0, insert your name: "))
+    #     play_game(player_x, player_0)
+
+
+if __name__ == "__main__":
+    main()
