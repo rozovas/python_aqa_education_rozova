@@ -5,13 +5,21 @@ import logging
 logger = logging.getLogger("TicTacToe")
 
 # creating and managing handlers:
-f_handler = logging.FileHandler('/Tic Tac Toe/game.log')
+f_handler = logging.FileHandler('game.log')
 s_handler = logging.StreamHandler()
 f_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
 s_handler.setFormatter(logging.Formatter('%(name)s - %(levelname)s - %(message)s'))
 f_handler.setLevel(logging.INFO)
 s_handler.setLevel(logging.INFO)
 
+
+class WinnersOnly(logging.Filter):
+    """filtering only records about winners to file"""
+    def filter(self, record):
+        return record.getMessage().endswith('wins. Congrats')
+
+
+f_handler.addFilter(WinnersOnly())
 # adding handlers to a logger:
 logger.addHandler(f_handler)
 logger.addHandler(s_handler)
@@ -118,7 +126,7 @@ class Game:
 
 
 class Player:
-    """Used to create a player of a game. Has the only attribute of name"""
+    """Used to create a player for a game. Has the only attribute of name"""
 
     # def __new__(cls, **kwargs):
     #     ...
@@ -148,7 +156,7 @@ def game_time(func):
         func(*args)
         end = time.time()
         t = end - start
-        logging.debug(f"Game lasted for {t} seconds")
+        logger.info(f"Game lasted for {t} seconds")
     return wrapper
 
 
@@ -167,25 +175,25 @@ def start_game(player_x, player_0):
             winner = game.get_winner()
             if winner is not None:
                 if winner == 1:
-                    logging.info(f"{player_x.name} wins. Congrats!")
+                    logger.info(f"{player_x.name} wins. Congrats!")
                     return
                 elif winner == 2:
-                    logging.info(f"{player_0.name} wins. Well done!")
+                    logger.info(f"{player_0.name} wins. Congrats!")
                     return
                 elif winner == 0:
-                    logging.info("Draw")
+                    logger.info("Draw")
                     return
                 elif winner == 3:
-                    logging.info("Impossible")
+                    logger.info("Impossible")
 
         except ValueError:
-            logging.error("You should enter two numbers separated by space!")
+            logger.error("You should enter two numbers separated by space!")
 
         except CellNumberError as c:
-            logging.error(c)
+            logger.error(c)
 
         except CellOccupiedError as o:
-            logging.error(o)
+            logger.error(o)
 
 
 def main():
@@ -224,11 +232,6 @@ def main():
             menu[choice][0]()
         except (KeyError, ValueError):
             print("Wrong input.")
-
-    # if menu == 1:
-    #     player_x = Player(input("Player X, insert your name: "))
-    #     player_0 = Player(input("Player 0, insert your name: "))
-    #     play_game(player_x, player_0)
 
 
 main()
