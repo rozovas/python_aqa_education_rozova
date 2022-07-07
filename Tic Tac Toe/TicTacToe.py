@@ -2,27 +2,50 @@ import sys
 import logging
 
 # creating a custom logger:
-logger = logging.getLogger("TicTacToe")
-
-# creating and managing handlers:
-f_handler = logging.FileHandler('game.log')
-s_handler = logging.StreamHandler()
-f_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-s_handler.setFormatter(logging.Formatter('%(name)s - %(levelname)s - %(message)s'))
-f_handler.setLevel(logging.INFO)
-s_handler.setLevel(logging.INFO)
+logger = logging.getLogger('TicTacToe')
 
 
-class WinnersOnly(logging.Filter):
-    """filtering only records about winners to file"""
-    def filter(self, record):
-        return record.getMessage().endswith('wins. Congrats')
+def setup_logger():
+    # creating and managing handlers:
+    f_handler = logging.FileHandler('game.log')
+    # stream=sys.stdout added to prevent the issue of PyCharm:
+    # https://youtrack.jetbrains.com/issue/IDEA-70016/error-mixing-stdoutstderr
+    s_handler = logging.StreamHandler(stream=sys.stdout)
+    f_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s'))
+    s_handler.setFormatter(logging.Formatter('%(name)s - %(levelname)s: %(message)s'))
 
+    class WinnersOnly(logging.Filter):
+        """filtering only records about winners to file"""
+        def filter(self, record):
+            return record.getMessage().endswith('won.')
 
-f_handler.addFilter(WinnersOnly())
-# adding handlers to a logger:
-logger.addHandler(f_handler)
-logger.addHandler(s_handler)
+    f_handler.addFilter(WinnersOnly())
+    # adding handlers to a logger:
+    logger.addHandler(f_handler)
+    logger.addHandler(s_handler)
+
+    # setting levels:
+    logger.setLevel(logging.DEBUG)
+    f_handler.setLevel(logging.INFO)
+    s_handler.setLevel(logging.INFO)
+
+    # function to test logger:
+    def test_log():
+        print("==========================")
+        print("Unit test 1. Тестируем лог")
+        print("==========================")
+        logger.debug("DEBUG LOG")
+        logger.info("INFO LOG")
+        logger.warning("WARNING LOG")
+        logger.error("ERROR LOG")
+        logger.critical("CRITICAL LOG")
+        # Этот вывод должен попасть в файл
+        logger.critical("John Cena wins. Congrats!")
+        print("==========================")
+        print("Unit test 1. Тест окончен")
+        print("==========================\n")
+
+    # test_log()
 
 
 class CellNumberError(Exception):
@@ -36,15 +59,24 @@ class CellNumberError(Exception):
 
 class CellOccupiedError(Exception):
 
-    def __init__(self):
-        self.message = "This cell is occupied."
+    def __init__(self, message="This cell is occupied."):
+        self.message = message
+
+    def __str__(self):
+        return self.message
+
+
+class PlayerExists(Exception):
+
+    def __init__(self, message="Player with such name already exists"):
+        self.message = message
 
     def __str__(self):
         return self.message
 
 
 class Game:
-    """Class game containing game logic"""
+    """Class containing main game logic"""
 
     def __init__(self, field=None):
         if field is None:
@@ -54,6 +86,7 @@ class Game:
 
     def display_field(self):
         """Returns current field state that can be printed"""
+
         def mutable_part():
             f2 = []
             for row in self.field:
@@ -63,7 +96,6 @@ class Game:
 
         frame = "_________\n"
         return frame + mutable_part() + frame
-
 
     @staticmethod
     def define_winner(i):
@@ -92,6 +124,7 @@ class Game:
         l = []
         x = h[0].count('X') + h[1].count('X') + h[2].count('X')
         o = h[0].count('0') + h[1].count('0') + h[2].count('0')
+
         for i in [*h, *v, *d]:
             l.append(self.define_winner(i))
         if (l.count(1) >= 1 and l.count(2) >= 1) or (abs(x - o) > 1):
@@ -128,20 +161,16 @@ class Game:
 class Player:
     """Used to create a player for a game. Has the only attribute of name"""
 
-    # def __new__(cls, **kwargs):
-    #     ...
-
     def __init__(self, name):
         self.name = name
-        self.win_log = 0
-        # self.age = age
+        # self.win_log = 0
 
     def __str__(self):
         return self.name
 
-    def win_log_update(self):
-        self.win_log += 1
-        return self.win_log
+    # def win_log_update(self):
+    #     self.win_log += 1
+    #     return self.win_log
 
 
 # client part
@@ -155,13 +184,15 @@ def game_time(func):
         start = time.time()
         func(*args)
         end = time.time()
-        t = end - start
+        t = round(end - start)
         logger.info(f"Game lasted for {t} seconds")
+
     return wrapper
 
 
 @game_time
 def start_game(player_x, player_0):
+    """Accepts two players and performs the game until one player wins, or it's draw"""
     current_player = player_x
     game = Game()
     print(game.display_field())
@@ -173,18 +204,17 @@ def start_game(player_x, player_0):
             current_player = player_x if current_player == player_0 else player_0
             print(game.display_field())
             winner = game.get_winner()
-            if winner is not None:
-                if winner == 1:
-                    logger.info(f"{player_x.name} wins. Congrats!")
-                    return
-                elif winner == 2:
-                    logger.info(f"{player_0.name} wins. Congrats!")
-                    return
-                elif winner == 0:
-                    logger.info("Draw")
-                    return
-                elif winner == 3:
-                    logger.info("Impossible")
+            if winner == 1:
+                logger.info(f"{player_x.name} won.")
+                return
+            elif winner == 2:
+                logger.info(f"{player_0.name} won.")
+                return
+            elif winner == 0:
+                logger.info("Draw")
+                return
+            elif winner == 3:
+                logger.info("Impossible")
 
         except ValueError:
             logger.error("You should enter two numbers separated by space!")
@@ -197,21 +227,34 @@ def start_game(player_x, player_0):
 
 
 def main():
-
     def play_game():
-        player_x = Player(input("Player X, insert your name: "))
-        player_0 = Player(input("Player 0, insert your name: "))
+        player_x_name = player_0_name = True
+        while player_x_name == player_0_name:
+            player_x_name = input("Player X, insert your name: ")
+            player_0_name = input("Player 0, insert your name: ")
+            if player_0_name == player_x_name:
+                logger.error("Player with such name already exists. Choose another name")
+        player_x = Player(player_x_name)
+        player_0 = Player(player_0_name)
         new_game = True
         while new_game:
             start_game(player_x, player_0)
-            another_game = int(input("Insert 1 to play another game, insert any other to get back to main menu"))
-            new_game = another_game == 1
+            another_game = input("Insert 1 to play another game, insert any other to get back to main menu")
+            new_game = another_game == "1"
 
     def view_log():
-        pass
+        f = open("game.log", mode='r', encoding='utf-8')
+        if f.read(1) == '':
+            logger.info("The log is empty.")
+        else:
+            print(f.read())
+        f.close()
 
     def clear_log():
-        pass
+        with open("game.log", 'w', encoding='utf-8') as f:
+            f.write("")
+            f.close()
+            logger.info("The log has been cleared")
 
     def exit_game():
         sys.exit()
@@ -227,11 +270,17 @@ def main():
         try:
             print("Press key to:")
             for k in menu:
-                print(f"{k}. {menu[k][1]}")
+                print(f"{k} - {menu[k][1]}")
             choice = int(input())
             menu[choice][0]()
         except (KeyError, ValueError):
-            print("Wrong input.")
+            logger.error("Wrong input.")
+        except FileNotFoundError:
+            logger.error("The log is empty")
+        except Exception as e:
+            logger.error(e)
 
 
-main()
+if __name__ == '__main__':
+    setup_logger()
+    main()
