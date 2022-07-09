@@ -1,33 +1,18 @@
 import random
 
 
-class BankSystem:
-
-    def __init__(self, name):
-        self.name = name
-
-    @staticmethod
-    def sequence():
-        num = 0
-        while num < 9999999:
-            yield num
-            num += 1
-
-    acc_number_gen = sequence()
-
-
 class Card:
 
     IIN = '400000'
     cards = {}
 
-    def __init__(self, card, pin_code):
+    def __init__(self):
         # self.first_name = first_name
         # self.last_name = last_name
         self.account_number = None
         self.card_number = None
-        self.pin_code = pin_code
-        self.card = card
+        self.pin_code = None
+        self.card = None
         self.balance = 0
 
     @staticmethod
@@ -53,15 +38,37 @@ class Card:
 
     def create_account(self):
         while True:
-            # self.generate_card_number()
-            # self.generate_pin()
+            self.generate_card_number()
+            self.generate_pin()
             d = {self.card: self.pin_code}
-            for k, v in d.items():
-                if k not in Card.cards and v not in Card.cards:
+            for k in d:
+                if k not in Card.cards:
                     Card.cards.update(d)
                     return "Account created"
-                else:
-                    self.card = input("Insert another number")
+
+    def get_account_details(self):
+        return self.card, self.pin_code
+
+    def view_balance(self):
+        ...
+
+
+# class CardHolder(Card):
+#
+#     def __init__(self, first_name, last_name):
+#         super(CardHolder, self).__init__()
+#         self.first_name = first_name
+#         self.last_name = last_name
+#
+#
+#     @staticmethod
+#     def sequence():
+#         num = 0
+#         while num < 9999999:
+#             yield num
+#             num += 1
+#
+#     acc_number_gen = sequence()
 
 
 
@@ -80,9 +87,9 @@ class Card:
 #     print(next(bank.acc_number_gen))
 
 
-card1 = Card(card='01234567890', pin_code='1234')
-print(card1.create_account())
-print(Card.cards)
-card2 = Card(card='01234567890', pin_code='1234')
-print(card2.create_account())
-print(Card.cards)
+# card1 = Card()
+# print(card1.create_account())
+# print(Card.cards)
+# card2 = Card()
+# print(card2.create_account())
+# print(Card.cards)

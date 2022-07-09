@@ -1,18 +1,29 @@
-import logger
+# import logger
 import sys
+import bank_logic
+
+
 # creating menu:
-
-
 def create_account():
-    print('Account_created')
+    card = bank_logic.Card()
+    card.create_account()
+    card, pin = card.get_account_details()
+    # пусть пока принты будут, потом логгер посмотрим и прикрутим
+    print(f"Your account has been created.\nYour card number is:{card}\nYour pin code is:{pin}")
 
 
 def log_in():
-    print("Successful login")
+    card = input("Insert your card number:")
+    pin = input("Insert your pin code:")
+    if card in bank_logic.Card.cards:
+        if bank_logic.Card.cards[card] == pin:
+            print("You've successfully logged in")
+    else:
+        print("Card number or pin code is incorrect")
 
 
 def balance():
-    print("You have some money")
+    ...
 
 
 def log_out():
@@ -38,23 +49,23 @@ user_menu = {
 menu = [main_menu, user_menu]
 
 
-def print_menu():
+def main():
     try:
-        main = 0
+        ma1n = 0
         while True:
             print("Press key to:")
-            for k in menu[main]:
-                print(f"{k} - {menu[main][k][1]}")
+            for k in menu[ma1n]:
+                print(f"{k} - {menu[ma1n][k][1]}")
             choice = int(input())
-            menu[main][choice][0]()
+            menu[ma1n][choice][0]()
             if choice == 2:
-                main = 1 if main == 0 else 0
+                ma1n = 1 if ma1n == 0 else 0
     except ValueError:
-        logger.logger.error('Wrong input')
+        print('Wrong input')
 
 
 if __name__ == '__main__':
-    print_menu()
+    main()
 
 
 

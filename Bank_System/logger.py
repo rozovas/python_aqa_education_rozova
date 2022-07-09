@@ -1,12 +1,12 @@
 import logging
 
 # creating a custom logger:
-logger = logging.getLogger('LanaBank')
+bank_logger = logging.getLogger('LanaBank')
 
 
 def setup_logger():
     # creating and managing handlers:
-    f_handler = logging.FileHandler('game.log')
+    f_handler = logging.FileHandler('bank.log')
     # stream=sys.stdout added to prevent the issue of PyCharm:
     # https://youtrack.jetbrains.com/issue/IDEA-70016/error-mixing-stdoutstderr
     s_handler = logging.StreamHandler(stream=sys.stdout)
@@ -18,7 +18,7 @@ def setup_logger():
         def filter(self, record):
             return record.levelname == logging.INFO
 
-    f_handler.addFilter(InfoMessages())
+    s_handler.addFilter(InfoMessages())
     # adding handlers to a logger:
     logger.addHandler(f_handler)
     logger.addHandler(s_handler)
